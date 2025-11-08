@@ -56,7 +56,7 @@ export async function getFeatureEngagementData(dateRange: { start: string; end: 
 
 // Feature distribution (pie chart)
 export async function getFeatureDistribution(dateRange: { start: string; end: string }) {
-  const response = await api.get('/api/features/usage', {
+  const response = await api.get('/api/charts/features/usage', {
     params: {
       start_date: dateRange.start,
       end_date: dateRange.end,

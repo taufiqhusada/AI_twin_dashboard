@@ -26,8 +26,17 @@ def get_activities(
     """Get all sessions (activities) with filtering and pagination"""
     query = db.query(SessionModel).join(User, SessionModel.user_id == User.id)
     
+    # Type filter can be: 'conversation', 'document', 'query', 'shared_twin'
     if type and type != 'all':
-        query = query.filter(SessionModel.activity_type == type)
+        if type == 'shared_twin':
+            query = query.filter(SessionModel.is_shared_twin == True)
+        elif type == 'document':
+            # Sessions that have documents
+            query = query.filter(SessionModel.documents.any())
+        elif type == 'query':
+            # Sessions that have queries
+            query = query.filter(SessionModel.queries.any())
+        # 'conversation' shows all sessions since all sessions are conversations
     
     if user:
         query = query.filter(User.email.like(f"%{user}%"))
@@ -41,23 +50,39 @@ def get_activities(
         time_diff = datetime.utcnow() - session.started_at
         time_ago = format_time_ago(time_diff)
         
-        # Since we don't have ended_at anymore, duration is N/A
-        duration = "N/A"
+        # All activities are conversations - type no longer differentiates
+        activity_type = 'conversation'
         
-        message_count = None
-        if session.activity_type == 'conversation' and session.conversation:
-            message_count = len(session.conversation.messages)
+        message_count = len(session.messages)
+        
+        # Get twin info
+        twin_name = None
+        twin_owner = None
+        if session.twin:
+            twin_name = session.twin.name
+            # Get twin owner
+            twin_owner_user = db.query(User).filter(User.id == session.twin.user_id).first()
+            if twin_owner_user:
+                twin_owner = twin_owner_user.email
         
         result.append({
             "id": session.id,
-            "type": session.activity_type,
-            "user": session.user.email,
-            "action": session.title or f"{session.activity_type.replace('_', ' ').title()}",
+            "type": activity_type,
+            "user": session.user.full_name,
+            "userEmail": session.user.email,
+            "action": session.title or "Conversation",
             "time": time_ago,
-            "duration": duration,
-            "messageCount": message_count,
-            "platform": "slack",  # Always slack now
-            "device": "Desktop"
+            "duration": "N/A",
+            "messageCount": message_count if message_count > 0 else None,
+            "platform": "slack",
+            "device": "Desktop",
+            "isShared": session.is_shared_twin,
+            "twinName": twin_name,
+            "twinOwner": twin_owner,
+            "hasDocuments": len(session.documents) > 0,
+            "hasQueries": len(session.queries) > 0,
+            "documentCount": len(session.documents),
+            "queryCount": len(session.queries)
         })
     
     return result
@@ -73,39 +98,67 @@ def get_activity_detail(activity_id: str, db: Session = Depends(get_db)):
     
     time_diff = datetime.utcnow() - session.started_at
     time_ago = format_time_ago(time_diff)
-    duration = "N/A"  # No ended_at field anymore
+    duration = "N/A"
+    
+    # All activities are conversations
+    activity_type = 'conversation'
     
     response = {
         "id": session.id,
-        "type": session.activity_type,
-        "user": session.user.email,
-        "action": session.title or f"{session.activity_type.replace('_', ' ').title()}",
+        "type": activity_type,
+        "user": session.user.full_name,
+        "userEmail": session.user.email,
+        "action": session.title or "Conversation",
         "time": time_ago,
+        "timestamp": session.started_at.strftime("%B %d, %Y at %I:%M %p"),
         "duration": duration,
         "platform": "slack",
-        "device": "Desktop"
+        "device": "Desktop",
+        "isShared": session.is_shared_twin
     }
     
-    if session.activity_type == 'conversation' and session.conversation:
+    # Add messages with action indicators
+    if session.messages:
         messages = []
-        for msg in session.conversation.messages:
-            messages.append({
+        for msg in session.messages:
+            msg_data = {
                 "sender": msg.sender_type,
                 "content": msg.content,
-                "timestamp": msg.created_at.strftime("%I:%M %p")
-            })
+                "timestamp": msg.created_at.strftime("%I:%M %p"),
+                "messageId": msg.id
+            }
+            
+            # Use message_type field to efficiently determine what to fetch
+            if msg.message_type and 'document' in msg.message_type:
+                # Only query documents table if message has document type
+                doc_for_msg = next((d for d in session.documents if d.message_id == msg.id), None)
+                if doc_for_msg:
+                    msg_data["documentCreated"] = {
+                        "title": doc_for_msg.title or "Untitled Document",
+                        "type": doc_for_msg.document_type,
+                        "wordCount": len(doc_for_msg.content.split()) if doc_for_msg.content else 0
+                    }
+            
+            if msg.message_type and 'query' in msg.message_type:
+                # Only query queries table if message has query type
+                query_for_msg = next((q for q in session.queries if q.message_id == msg.id), None)
+                if query_for_msg:
+                    msg_data["queryExecuted"] = {
+                        "query": query_for_msg.query_text,
+                        "resultsCount": query_for_msg.results_count
+                    }
+            
+            messages.append(msg_data)
+        
         response["messageCount"] = len(messages)
         response["messages"] = messages
     
-    elif session.activity_type == 'document' and session.document:
-        response["documentTitle"] = session.title or "Untitled Document"
-        response["documentPreview"] = session.document.content[:500] + "..." if len(session.document.content) > 500 else session.document.content
-        response["documentType"] = session.document.document_type
-    
-    elif session.activity_type == 'query' and session.query:
-        response["query"] = session.query.query_text
-        response["retrievedInfo"] = f"Found {session.query.results_count} results"
-        response["sources"] = []
+    # Add summary counts
+    response["documentCount"] = len(session.documents)
+    response["queryCount"] = len(session.queries)
+    # Add summary counts
+    response["documentCount"] = len(session.documents)
+    response["queryCount"] = len(session.queries)
     
     # If it's a shared twin session, add owner info
     if session.is_shared_twin:

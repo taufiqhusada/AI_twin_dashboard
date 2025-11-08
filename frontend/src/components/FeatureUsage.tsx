@@ -34,7 +34,7 @@ export function FeatureUsage({ dateRange }: FeatureUsageProps) {
       <Card>
         <CardHeader>
           <CardTitle>Feature Usage Distribution</CardTitle>
-          <CardDescription>Breakdown of how users interact with their Twin</CardDescription>
+          <CardDescription>Total actions performed by users across all features</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] flex items-center justify-center">

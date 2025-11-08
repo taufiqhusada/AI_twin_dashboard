@@ -87,6 +87,7 @@ class Message(Base):
     session_id = Column(String, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True)
     sender_type = Column(String(20), nullable=False)  # 'user' or 'twin'
     content = Column(Text, nullable=False)
+    message_type = Column(String(20), default='general', index=True)  # 'document', 'query', 'general'
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

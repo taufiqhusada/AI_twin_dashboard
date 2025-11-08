@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import List
 
 from app.api.deps import get_db
-from app.models import Session as SessionModel, Message, Conversation
+from app.models import Session as SessionModel, Message, Document, Query as QueryModel
 from app.schemas import (
     ActivityChartPoint,
     ConversationChartPoint,
@@ -78,18 +78,15 @@ def get_conversation_chart(
         day_start = datetime.combine(current, datetime.min.time())
         day_end = datetime.combine(current, datetime.max.time())
         
-        # Count conversation sessions
+        # Count sessions (all sessions are conversations)
         conversations = db.query(func.count(SessionModel.id)).filter(
-            SessionModel.activity_type == 'conversation',
             SessionModel.started_at >= day_start,
             SessionModel.started_at <= day_end
         ).scalar() or 0
         
-        # Count messages (join through conversations and sessions)
+        # Count messages in those sessions
         messages = db.query(func.count(Message.id)).join(
-            Conversation, Message.conversation_id == Conversation.id
-        ).join(
-            SessionModel, Conversation.session_id == SessionModel.id
+            SessionModel, Message.session_id == SessionModel.id
         ).filter(
             SessionModel.started_at >= day_start,
             SessionModel.started_at <= day_end
@@ -114,8 +111,10 @@ def get_engagement_chart(
     """
     Get daily feature engagement for charting.
     
-    Returns array of {date, questionAsked, infoRetrieved, documentsDrafted, sharedInteractions}
+    Returns array of {date, questionAsked, infoRetrieved, documentsDrafted}
     for each day in the range.
+    
+    Note: These metrics represent actual actions taken, not session types.
     """
     start = datetime.strptime(start_date, "%Y-%m-%d").date()
     end = datetime.strptime(end_date, "%Y-%m-%d").date()
@@ -127,27 +126,33 @@ def get_engagement_chart(
         day_start = datetime.combine(current, datetime.min.time())
         day_end = datetime.combine(current, datetime.max.time())
         
-        # Count each activity type for this day
-        def count_activity_type(activity_type: str) -> int:
-            return db.query(func.count(SessionModel.id)).filter(
-                SessionModel.activity_type == activity_type,
-                SessionModel.started_at >= day_start,
-                SessionModel.started_at <= day_end
-            ).scalar() or 0
+        # Count sessions (conversations/questions)
+        questions_asked = db.query(func.count(SessionModel.id)).filter(
+            SessionModel.started_at >= day_start,
+            SessionModel.started_at <= day_end
+        ).scalar() or 0
         
-        # Count shared twin sessions
-        shared_interactions = db.query(func.count(SessionModel.id)).filter(
-            SessionModel.is_shared_twin == True,
+        # Count queries (info retrieval)
+        info_retrieved = db.query(func.count(QueryModel.id)).join(
+            SessionModel, QueryModel.session_id == SessionModel.id
+        ).filter(
+            SessionModel.started_at >= day_start,
+            SessionModel.started_at <= day_end
+        ).scalar() or 0
+        
+        # Count documents drafted
+        documents_drafted = db.query(func.count(Document.id)).join(
+            SessionModel, Document.session_id == SessionModel.id
+        ).filter(
             SessionModel.started_at >= day_start,
             SessionModel.started_at <= day_end
         ).scalar() or 0
         
         data = {
             "date": f"{current.month}/{current.day}",
-            "questionAsked": count_activity_type('conversation'),
-            "infoRetrieved": count_activity_type('query'),
-            "documentsDrafted": count_activity_type('document'),
-            "sharedInteractions": shared_interactions,
+            "questionAsked": questions_asked,
+            "infoRetrieved": info_retrieved,
+            "documentsDrafted": documents_drafted,
         }
         result.append(data)
         current += timedelta(days=1)
@@ -164,45 +169,50 @@ def get_feature_distribution(
     """
     Get feature usage distribution (for pie chart).
     
-    Returns aggregated session counts by activity type across the date range.
+    Returns count of different action types users performed:
+    - Questions/Conversations: Total sessions (each session is a conversation)
+    - Documents Drafted: Total documents created
+    - Information Retrieved: Total queries/searches performed
     """
     start = datetime.strptime(start_date, "%Y-%m-%d")
     end = datetime.strptime(end_date, "%Y-%m-%d")
     
-    # Count each activity type in the date range
-    activity_counts = db.query(
-        SessionModel.activity_type,
-        func.count(SessionModel.id).label('count')
-    ).filter(
-        SessionModel.started_at >= start,
-        SessionModel.started_at <= end
-    ).group_by(SessionModel.activity_type).all()
-    
-    # Map activity types to user-friendly names
-    feature_labels = {
-        'conversation': 'Questions Asked',
-        'query': 'Information Retrieved',
-        'document': 'Documents Drafted',
-    }
-    
     result = []
-    for activity_type, count in activity_counts:
-        result.append({
-            "name": feature_labels.get(activity_type, activity_type.replace('_', ' ').title()),
-            "value": count
-        })
     
-    # Add shared twin count separately
-    shared_count = db.query(func.count(SessionModel.id)).filter(
-        SessionModel.is_shared_twin == True,
+    # Count total sessions/conversations (questions asked)
+    sessions_count = db.query(func.count(SessionModel.id)).filter(
         SessionModel.started_at >= start,
         SessionModel.started_at <= end
     ).scalar() or 0
     
-    if shared_count > 0:
+    if sessions_count > 0:
         result.append({
-            "name": "Shared Twin Usage",
-            "value": shared_count
+            "name": "Questions Asked",
+            "value": sessions_count
+        })
+    
+    # Count documents drafted
+    documents_count = db.query(func.count(Document.id)).filter(
+        Document.created_at >= start,
+        Document.created_at <= end
+    ).scalar() or 0
+    
+    if documents_count > 0:
+        result.append({
+            "name": "Documents Drafted",
+            "value": documents_count
+        })
+    
+    # Count information retrieval queries
+    queries_count = db.query(func.count(QueryModel.id)).filter(
+        QueryModel.created_at >= start,
+        QueryModel.created_at <= end
+    ).scalar() or 0
+    
+    if queries_count > 0:
+        result.append({
+            "name": "Information Retrieved",
+            "value": queries_count
         })
     
     return result

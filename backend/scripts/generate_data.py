@@ -227,25 +227,44 @@ def create_messages_for_session(db, session, topic):
             ]
             content = random.choice(responses)
         
+        # Create message first with general type
         message = Message(
             session_id=session.id,
             sender_type='user' if is_user else 'twin',
             content=content,
+            message_type='general',
             created_at=message_time
         )
         db.add(message)
-        db.flush()
+        db.flush()  # Get the message ID
         messages.append(message)
+        
+        # Track what gets created for this message
+        has_document = False
+        has_query = False
         
         # Randomly create documents or queries based on message content
         if not is_user:  # Twin responses can trigger document/query creation
             if 'draft' in content.lower() or 'document' in content.lower() or 'created' in content.lower():
                 if random.random() < 0.7:  # 70% chance to actually create document
                     create_document_from_message(db, session, message, topic)
+                    db.flush()  # Ensure document is created
+                    has_document = True
             
             if 'found' in content.lower() or 'search' in content.lower() or 'emails' in content.lower():
                 if random.random() < 0.6:  # 60% chance to create query record
                     create_query_from_message(db, session, message, topic)
+                    db.flush()  # Ensure query is created
+                    has_query = True
+        
+        # Update message type based on what was actually created
+        if has_document and has_query:
+            message.message_type = 'document,query'
+        elif has_document:
+            message.message_type = 'document'
+        elif has_query:
+            message.message_type = 'query'
+        # else stays 'general'
 
 
 def create_document_from_message(db, session, message, topic):

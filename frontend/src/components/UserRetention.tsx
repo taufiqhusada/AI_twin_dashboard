@@ -75,11 +75,7 @@ export function UserRetention({ dateRange }: UserRetentionProps) {
         </div>
 
         <div className="pt-4 border-t border-gray-200">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-gray-600">Avg. Session Duration</p>
-              <p className="text-gray-900 mt-1">{retentionData.avgSessionDuration}</p>
-            </div>
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <p className="text-gray-600">Sessions per User</p>
               <p className="text-gray-900 mt-1">{retentionData.sessionsPerUser}</p>

@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { getRecentActivityData } from '../utils/api';
-import { MessageSquare, FileText, Search, Users } from 'lucide-react';
+import { FileText, Search, Users } from 'lucide-react';
 
 interface RecentActivityProps {
   onViewAll: () => void;
@@ -30,31 +30,6 @@ export function RecentActivity({ onViewAll, onViewActivity }: RecentActivityProp
 
     fetchActivities();
   }, []);
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'conversation':
-        return <MessageSquare className="h-4 w-4 text-blue-600" />;
-      case 'document':
-        return <FileText className="h-4 w-4 text-purple-600" />;
-      case 'query':
-        return <Search className="h-4 w-4 text-green-600" />;
-      case 'shared':
-        return <Users className="h-4 w-4 text-orange-600" />;
-      default:
-        return null;
-    }
-  };
-
-  const getActivityBadge = (type: string) => {
-    const badges = {
-      conversation: { label: 'Conversation', variant: 'default' as const },
-      document: { label: 'Document', variant: 'secondary' as const },
-      query: { label: 'Query', variant: 'outline' as const },
-      shared: { label: 'Shared Twin', variant: 'destructive' as const },
-    };
-    return badges[type as keyof typeof badges] || { label: type, variant: 'default' as const };
-  };
 
   if (loading || !activities.length) {
     return (
@@ -92,32 +67,67 @@ export function RecentActivity({ onViewAll, onViewActivity }: RecentActivityProp
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Type</TableHead>
               <TableHead>User</TableHead>
+              <TableHead>Twin</TableHead>
               <TableHead>Action</TableHead>
+              <TableHead>Activity</TableHead>
               <TableHead>Time</TableHead>
-              <TableHead className="text-right">Duration</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {activities.map((activity) => {
-              const badge = getActivityBadge(activity.type);
+              // Format twin display
+              let twinDisplay = activity.twinName || 'Unknown Twin';
+              if (activity.twinOwner) {
+                if (activity.userEmail === activity.twinOwner) {
+                  twinDisplay = `${activity.twinName || 'My Twin'}`;
+                } else {
+                  const ownerName = activity.twinOwner.split('@')[0].split('.').map((n: string) => 
+                    n.charAt(0).toUpperCase() + n.slice(1)
+                  ).join(' ');
+                  twinDisplay = `${activity.twinName} (${ownerName})`;
+                }
+              }
+              
               return (
                 <TableRow 
                   key={activity.id}
                   className="cursor-pointer hover:bg-gray-50"
                   onClick={() => onViewActivity(activity)}
                 >
-                  <TableCell>
+                  <TableCell>{activity.user}</TableCell>
+                  <TableCell className="text-gray-700">
                     <div className="flex items-center gap-2">
-                      {getActivityIcon(activity.type)}
-                      <Badge variant={badge.variant}>{badge.label}</Badge>
+                      {twinDisplay}
+                      {activity.isShared && (
+                        <Badge variant="outline" className="text-xs">
+                          <Users className="h-3 w-3 mr-1" />
+                          Shared
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
-                  <TableCell>{activity.user}</TableCell>
                   <TableCell className="max-w-md truncate">{activity.action}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      {activity.hasDocuments && (
+                        <Badge variant="secondary" className="text-xs">
+                          <FileText className="h-3 w-3 mr-1" />
+                          {activity.documentCount}
+                        </Badge>
+                      )}
+                      {activity.hasQueries && (
+                        <Badge variant="outline" className="text-xs">
+                          <Search className="h-3 w-3 mr-1" />
+                          {activity.queryCount}
+                        </Badge>
+                      )}
+                      {!activity.hasDocuments && !activity.hasQueries && (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-gray-600">{activity.time}</TableCell>
-                  <TableCell className="text-right text-gray-600">{activity.duration}</TableCell>
                 </TableRow>
               );
             })}

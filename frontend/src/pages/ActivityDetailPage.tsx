@@ -1,7 +1,7 @@
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { MessageSquare, FileText, Search, Users, Clock, Calendar, Hash, ArrowLeft } from 'lucide-react';
 import { ScrollArea } from '../components/ui/scroll-area';
 
@@ -19,8 +19,6 @@ export function ActivityDetailPage({ activity, onBack }: ActivityDetailPageProps
         return <FileText className="h-6 w-6 text-purple-600" />;
       case 'query':
         return <Search className="h-6 w-6 text-green-600" />;
-      case 'shared':
-        return <Users className="h-6 w-6 text-orange-600" />;
       default:
         return null;
     }
@@ -31,7 +29,6 @@ export function ActivityDetailPage({ activity, onBack }: ActivityDetailPageProps
       conversation: { label: 'Conversation', variant: 'default' as const },
       document: { label: 'Document', variant: 'secondary' as const },
       query: { label: 'Query', variant: 'outline' as const },
-      shared: { label: 'Shared Twin', variant: 'destructive' as const },
     };
     return badges[type as keyof typeof badges] || { label: type, variant: 'default' as const };
   };
@@ -64,6 +61,12 @@ export function ActivityDetailPage({ activity, onBack }: ActivityDetailPageProps
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-gray-900">Activity Details</h1>
                 <Badge variant={badge.variant}>{badge.label}</Badge>
+                {activity.isShared && (
+                  <Badge variant="outline">
+                    <Users className="h-3 w-3 mr-1" />
+                    Shared Twin
+                  </Badge>
+                )}
               </div>
               <p className="text-gray-600">{activity.action}</p>
             </div>
@@ -76,26 +79,23 @@ export function ActivityDetailPage({ activity, onBack }: ActivityDetailPageProps
             <CardTitle>Metadata</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="flex items-start gap-3">
                 <Users className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div>
                   <p className="text-gray-600">User</p>
                   <p className="text-gray-900">{activity.user}</p>
+                  {activity.userEmail && (
+                    <p className="text-sm text-gray-500">{activity.userEmail}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
                 <div>
-                  <p className="text-gray-600">Time</p>
-                  <p className="text-gray-900">{activity.time}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Clock className="h-5 w-5 text-gray-400 mt-0.5" />
-                <div>
-                  <p className="text-gray-600">Duration</p>
-                  <p className="text-gray-900">{activity.duration}</p>
+                  <p className="text-gray-600">Date & Time</p>
+                  <p className="text-gray-900">{activity.timestamp || activity.time}</p>
+                  <p className="text-sm text-gray-500">{activity.time}</p>
                 </div>
               </div>
               {activity.messageCount && (
@@ -112,16 +112,20 @@ export function ActivityDetailPage({ activity, onBack }: ActivityDetailPageProps
         </Card>
 
         {/* Interaction Details */}
-        {activity.type === 'conversation' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Conversation Thread</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {activity.messages?.map((message: any, index: number) => (
+        <Card>
+          <CardHeader>
+            <CardTitle>Conversation Thread</CardTitle>
+            <CardDescription>
+              {activity.documentCount > 0 && `${activity.documentCount} document${activity.documentCount > 1 ? 's' : ''} created`}
+              {activity.documentCount > 0 && activity.queryCount > 0 && ' • '}
+              {activity.queryCount > 0 && `${activity.queryCount} quer${activity.queryCount > 1 ? 'ies' : 'y'} executed`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {activity.messages?.map((message: any, index: number) => (
+                <div key={index}>
                   <div
-                    key={index}
                     className={`p-4 rounded-lg ${
                       message.sender === 'user'
                         ? 'bg-blue-50 ml-0 md:ml-12'
@@ -136,70 +140,46 @@ export function ActivityDetailPage({ activity, onBack }: ActivityDetailPageProps
                     </div>
                     <p className="text-gray-700">{message.content}</p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {activity.type === 'document' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Document Content</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-1">Document Title</p>
-                  <p className="text-gray-900">{activity.documentTitle}</p>
-                </div>
-                <Separator />
-                <div className="bg-white border border-gray-200 p-6 rounded-lg">
-                  <p className="text-gray-600 mb-3">Content Preview</p>
-                  <p className="text-gray-700 whitespace-pre-line leading-relaxed">{activity.documentPreview}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {activity.type === 'query' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Query Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-2">User Query</p>
-                  <p className="text-gray-900">{activity.query}</p>
-                </div>
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <p className="text-gray-600 mb-3">Retrieved Information</p>
-                  <p className="text-gray-700 leading-relaxed">{activity.retrievedInfo}</p>
-                  {activity.sources && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <p className="text-gray-600 mb-2">Sources</p>
-                      <ul className="space-y-2">
-                        {activity.sources.map((source: string, index: number) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="text-blue-600 mt-1">•</span>
-                            <span className="text-gray-700">{source}</span>
-                          </li>
-                        ))}
-                      </ul>
+                  
+                  {/* Document created indicator */}
+                  {message.documentCreated && (
+                    <div className="mt-2 ml-4 mr-0 md:mr-16 p-3 bg-purple-50 border-l-4 border-purple-400 rounded">
+                      <div className="flex items-start gap-2">
+                        <FileText className="h-4 w-4 text-purple-600 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-gray-900 font-medium">{message.documentCreated.title}</p>
+                          <p className="text-gray-600 text-sm">
+                            {message.documentCreated.type} • {message.documentCreated.wordCount} words
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Query executed indicator */}
+                  {message.queryExecuted && (
+                    <div className="mt-2 ml-4 mr-0 md:mr-16 p-3 bg-green-50 border-l-4 border-green-400 rounded">
+                      <div className="flex items-start gap-2">
+                        <Search className="h-4 w-4 text-green-600 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-gray-900 font-medium">Information Retrieved</p>
+                          <p className="text-gray-600 text-sm">
+                            Found {message.queryExecuted.resultsCount} results
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        {activity.type === 'shared' && (
+        {activity.isShared && activity.twinOwner && (
           <Card>
             <CardHeader>
-              <CardTitle>Shared Twin Interaction</CardTitle>
+              <CardTitle>Shared Twin Information</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

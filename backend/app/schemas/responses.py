@@ -40,7 +40,6 @@ class EngagementChartPoint(BaseModel):
     questionAsked: int
     infoRetrieved: int
     documentsDrafted: int
-    sharedInteractions: int
 
 
 # Feature Usage Response
@@ -67,12 +66,20 @@ class ActivityListItem(BaseModel):
     id: str
     type: str
     user: str
+    userEmail: Optional[str] = None
     action: str
     time: str
     duration: str
     messageCount: Optional[int] = None
     platform: str
     device: str
+    isShared: Optional[bool] = None
+    twinName: Optional[str] = None
+    twinOwner: Optional[str] = None
+    hasDocuments: Optional[bool] = None
+    hasQueries: Optional[bool] = None
+    documentCount: Optional[int] = None
+    queryCount: Optional[int] = None
 
 
 class MessageItem(BaseModel):
@@ -80,6 +87,9 @@ class MessageItem(BaseModel):
     sender: str
     content: str
     timestamp: str
+    messageId: Optional[str] = None
+    documentCreated: Optional[dict] = None
+    queryExecuted: Optional[dict] = None
 
 
 class ActivityDetail(BaseModel):
@@ -87,25 +97,22 @@ class ActivityDetail(BaseModel):
     id: str
     type: str
     user: str
+    userEmail: Optional[str] = None
     action: str
     time: str
+    timestamp: Optional[str] = None
     duration: str
     platform: str
     device: str
+    isShared: Optional[bool] = None
     
     # Conversation-specific fields
     messageCount: Optional[int] = None
     messages: Optional[List[MessageItem]] = None
     
-    # Document-specific fields
-    documentTitle: Optional[str] = None
-    documentPreview: Optional[str] = None
-    documentType: Optional[str] = None
-    
-    # Query-specific fields
-    query: Optional[str] = None
-    retrievedInfo: Optional[str] = None
-    sources: Optional[List[str]] = None
+    # Summary counts
+    documentCount: Optional[int] = None
+    queryCount: Optional[int] = None
     
     # Shared Twin-specific fields
     twinOwner: Optional[str] = None

@@ -141,7 +141,6 @@ export function ActivityCharts({ dateRange }: ActivityChartsProps) {
               <Bar dataKey="questionAsked" fill="#3b82f6" name="Questions Asked" />
               <Bar dataKey="infoRetrieved" fill="#10b981" name="Info Retrieved" />
               <Bar dataKey="documentsDrafted" fill="#8b5cf6" name="Documents Drafted" />
-              <Bar dataKey="sharedInteractions" fill="#f59e0b" name="Shared Twin Interactions" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

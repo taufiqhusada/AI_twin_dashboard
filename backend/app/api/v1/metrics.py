@@ -40,8 +40,8 @@ def get_metrics(
         SessionModel.started_at <= end
     ).scalar() or 0
     
+    # All sessions are conversations now
     total_conversations = db.query(func.count(SessionModel.id)).filter(
-        SessionModel.activity_type == 'conversation',
         SessionModel.started_at >= start,
         SessionModel.started_at <= end
     ).scalar() or 0
@@ -61,8 +61,8 @@ def get_metrics(
         SessionModel.started_at < prev_end
     ).scalar() or 0
     
+    # All sessions are conversations
     prev_conversations = db.query(func.count(SessionModel.id)).filter(
-        SessionModel.activity_type == 'conversation',
         SessionModel.started_at >= prev_start,
         SessionModel.started_at < prev_end
     ).scalar() or 0

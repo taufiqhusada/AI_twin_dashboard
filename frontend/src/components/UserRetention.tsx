@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Progress } from './ui/progress';
-import { getUserRetentionData } from '../utils/mockData';
+import { getUserRetentionData } from '../utils/api';
 
 interface UserRetentionProps {
   dateRange: { start: string; end: string };

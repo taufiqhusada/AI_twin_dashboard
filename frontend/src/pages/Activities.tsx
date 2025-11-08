@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { MessageSquare, FileText, Search as SearchIcon, Users, Filter } from 'lucide-react';
-import { getAllActivities } from '../utils/mockData';
+import { getAllActivities } from '../utils/api';
 
 interface ActivitiesProps {
   onViewActivity: (activity: any) => void;

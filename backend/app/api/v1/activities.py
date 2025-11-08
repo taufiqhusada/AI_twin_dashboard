@@ -6,10 +6,9 @@ from fastapi import APIRouter, Depends, Query as QueryParam, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional, List
-import json
 
 from app.api.deps import get_db
-from app.models import User, Activity, Conversation, Document, Query, SharedTwinInteraction
+from app.models import User, Session as SessionModel, Twin
 from app.schemas import ActivityListItem, ActivityDetail
 from app.utils import format_time_ago, format_duration
 
@@ -24,123 +23,96 @@ def get_activities(
     user: Optional[str] = QueryParam(None, description="Filter by user email"),
     db: Session = Depends(get_db)
 ):
-    """
-    Get all activities with filtering and pagination.
+    """Get all sessions (activities) with filtering and pagination"""
+    query = db.query(SessionModel).join(User, SessionModel.user_id == User.id)
     
-    Supports filtering by activity type and user email, with pagination.
-    Returns array of activity objects with basic details.
-    """
-    query = db.query(Activity).join(User)
-    
-    # Apply filters
     if type and type != 'all':
-        query = query.filter(Activity.activity_type == type)
+        query = query.filter(SessionModel.activity_type == type)
     
     if user:
         query = query.filter(User.email.like(f"%{user}%"))
     
-    # Order by most recent first
-    query = query.order_by(Activity.started_at.desc())
-    
-    # Pagination
+    query = query.order_by(SessionModel.started_at.desc())
     offset = (page - 1) * limit
-    activities = query.offset(offset).limit(limit).all()
+    sessions = query.offset(offset).limit(limit).all()
     
-    # Format response
     result = []
-    for activity in activities:
-        # Calculate time ago
-        time_diff = datetime.utcnow() - activity.started_at
+    for session in sessions:
+        time_diff = datetime.utcnow() - session.started_at
         time_ago = format_time_ago(time_diff)
         
-        # Format duration
-        duration = format_duration(activity.duration_seconds)
+        # Since we don't have ended_at anymore, duration is N/A
+        duration = "N/A"
         
-        # Get message count if conversation
         message_count = None
-        if activity.activity_type == 'conversation' and activity.conversation:
-            message_count = activity.conversation.message_count
+        if session.activity_type == 'conversation' and session.conversation:
+            message_count = len(session.conversation.messages)
         
         result.append({
-            "id": activity.id,
-            "type": activity.activity_type,
-            "user": activity.user.email,
-            "action": activity.action_description,
+            "id": session.id,
+            "type": session.activity_type,
+            "user": session.user.email,
+            "action": session.title or f"{session.activity_type.replace('_', ' ').title()}",
             "time": time_ago,
             "duration": duration,
             "messageCount": message_count,
-            "platform": activity.platform,
-            "device": activity.device_type or "Desktop"
+            "platform": "slack",  # Always slack now
+            "device": "Desktop"
         })
     
     return result
 
 
 @router.get("/activities/{activity_id}", response_model=ActivityDetail)
-def get_activity_detail(
-    activity_id: str,
-    db: Session = Depends(get_db)
-):
-    """
-    Get detailed information about a specific activity.
+def get_activity_detail(activity_id: str, db: Session = Depends(get_db)):
+    """Get detailed information about a specific session/activity"""
+    session = db.query(SessionModel).filter(SessionModel.id == activity_id).first()
     
-    Returns full activity object with related data including:
-    - Conversation: messages array
-    - Document: title, preview, type
-    - Query: query text, retrieved info, sources
-    - Shared: twin owner, interaction summary
-    """
-    activity = db.query(Activity).filter(Activity.id == activity_id).first()
-    
-    if not activity:
+    if not session:
         raise HTTPException(status_code=404, detail="Activity not found")
     
-    # Calculate time ago and duration
-    time_diff = datetime.utcnow() - activity.started_at
+    time_diff = datetime.utcnow() - session.started_at
     time_ago = format_time_ago(time_diff)
-    duration = format_duration(activity.duration_seconds)
+    duration = "N/A"  # No ended_at field anymore
     
-    # Base response
     response = {
-        "id": activity.id,
-        "type": activity.activity_type,
-        "user": activity.user.email,
-        "action": activity.action_description,
+        "id": session.id,
+        "type": session.activity_type,
+        "user": session.user.email,
+        "action": session.title or f"{session.activity_type.replace('_', ' ').title()}",
         "time": time_ago,
         "duration": duration,
-        "platform": activity.platform,
-        "device": activity.device_type or "Desktop"
+        "platform": "slack",
+        "device": "Desktop"
     }
     
-    # Add type-specific details
-    if activity.activity_type == 'conversation' and activity.conversation:
+    if session.activity_type == 'conversation' and session.conversation:
         messages = []
-        for msg in activity.conversation.messages:
+        for msg in session.conversation.messages:
             messages.append({
                 "sender": msg.sender_type,
                 "content": msg.content,
                 "timestamp": msg.created_at.strftime("%I:%M %p")
             })
-        response["messageCount"] = activity.conversation.message_count
+        response["messageCount"] = len(messages)
         response["messages"] = messages
     
-    elif activity.activity_type == 'document' and activity.document:
-        response["documentTitle"] = activity.document.title
-        response["documentPreview"] = activity.document.content
-        response["documentType"] = activity.document.document_type
+    elif session.activity_type == 'document' and session.document:
+        response["documentTitle"] = session.title or "Untitled Document"
+        response["documentPreview"] = session.document.content[:500] + "..." if len(session.document.content) > 500 else session.document.content
+        response["documentType"] = session.document.document_type
     
-    elif activity.activity_type == 'query' and activity.query:
-        response["query"] = activity.query.query_text
-        response["retrievedInfo"] = activity.query.retrieved_info
-        if activity.query.sources_json:
-            response["sources"] = json.loads(activity.query.sources_json)
+    elif session.activity_type == 'query' and session.query:
+        response["query"] = session.query.query_text
+        response["retrievedInfo"] = f"Found {session.query.results_count} results"
+        response["sources"] = []
     
-    elif activity.activity_type == 'shared' and activity.shared_interaction:
-        # Get twin owner details
-        twin_owner = db.query(User).filter(
-            User.id == activity.shared_interaction.twin_owner_id
-        ).first()
-        response["twinOwner"] = twin_owner.email if twin_owner else "Unknown"
-        response["interactionSummary"] = activity.shared_interaction.interaction_summary
+    # If it's a shared twin session, add owner info
+    if session.is_shared_twin:
+        twin = db.query(Twin).filter(Twin.id == session.twin_id).first()
+        if twin:
+            twin_owner = db.query(User).filter(User.id == twin.user_id).first()
+            response["twinOwner"] = twin_owner.email if twin_owner else "Unknown"
+            response["interactionSummary"] = f"Used {twin_owner.email if twin_owner else 'someone'}'s Twin"
     
     return response

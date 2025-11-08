@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { getRecentActivityData } from '../utils/mockData';
+import { getRecentActivityData } from '../utils/api';
 import { MessageSquare, FileText, Search, Users } from 'lucide-react';
 
 interface RecentActivityProps {

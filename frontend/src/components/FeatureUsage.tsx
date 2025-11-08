@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { getFeatureDistribution } from '../utils/mockData';
+import { getFeatureDistribution } from '../utils/api';
 
 interface FeatureUsageProps {
   dateRange: { start: string; end: string };

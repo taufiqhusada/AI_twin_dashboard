@@ -1,14 +1,16 @@
 """
 Charts API endpoints.
 Provides time-series data for various dashboard charts.
+All data is calculated on-demand from sessions.
 """
 from fastapi import APIRouter, Depends, Query as QueryParam
 from sqlalchemy.orm import Session
+from sqlalchemy import func, distinct
 from datetime import datetime, timedelta
 from typing import List
 
 from app.api.deps import get_db
-from app.models import DailyMetric, FeatureUsage
+from app.models import Session as SessionModel, Message, Conversation
 from app.schemas import (
     ActivityChartPoint,
     ConversationChartPoint,
@@ -33,19 +35,24 @@ def get_activity_chart(
     start = datetime.strptime(start_date, "%Y-%m-%d").date()
     end = datetime.strptime(end_date, "%Y-%m-%d").date()
     
-    # Query daily metrics
-    metrics = db.query(DailyMetric).filter(
-        DailyMetric.metric_date >= start,
-        DailyMetric.metric_date <= end
-    ).order_by(DailyMetric.metric_date).all()
-    
     result = []
-    for metric in metrics:
-        date_obj = metric.metric_date
+    current = start
+    
+    while current <= end:
+        day_start = datetime.combine(current, datetime.min.time())
+        day_end = datetime.combine(current, datetime.max.time())
+        
+        # Count distinct users with sessions on this day
+        active_users = db.query(func.count(distinct(SessionModel.user_id))).filter(
+            SessionModel.started_at >= day_start,
+            SessionModel.started_at <= day_end
+        ).scalar() or 0
+        
         result.append({
-            "date": f"{date_obj.month}/{date_obj.day}",
-            "activeUsers": metric.total_active_users
+            "date": f"{current.month}/{current.day}",
+            "activeUsers": active_users
         })
+        current += timedelta(days=1)
     
     return result
 
@@ -64,19 +71,36 @@ def get_conversation_chart(
     start = datetime.strptime(start_date, "%Y-%m-%d").date()
     end = datetime.strptime(end_date, "%Y-%m-%d").date()
     
-    metrics = db.query(DailyMetric).filter(
-        DailyMetric.metric_date >= start,
-        DailyMetric.metric_date <= end
-    ).order_by(DailyMetric.metric_date).all()
-    
     result = []
-    for metric in metrics:
-        date_obj = metric.metric_date
+    current = start
+    
+    while current <= end:
+        day_start = datetime.combine(current, datetime.min.time())
+        day_end = datetime.combine(current, datetime.max.time())
+        
+        # Count conversation sessions
+        conversations = db.query(func.count(SessionModel.id)).filter(
+            SessionModel.activity_type == 'conversation',
+            SessionModel.started_at >= day_start,
+            SessionModel.started_at <= day_end
+        ).scalar() or 0
+        
+        # Count messages (join through conversations and sessions)
+        messages = db.query(func.count(Message.id)).join(
+            Conversation, Message.conversation_id == Conversation.id
+        ).join(
+            SessionModel, Conversation.session_id == SessionModel.id
+        ).filter(
+            SessionModel.started_at >= day_start,
+            SessionModel.started_at <= day_end
+        ).scalar() or 0
+        
         result.append({
-            "date": f"{date_obj.month}/{date_obj.day}",
-            "conversations": metric.total_conversations,
-            "messages": metric.total_messages
+            "date": f"{current.month}/{current.day}",
+            "conversations": conversations,
+            "messages": messages
         })
+        current += timedelta(days=1)
     
     return result
 
@@ -98,18 +122,32 @@ def get_engagement_chart(
     
     result = []
     current = start
+    
     while current <= end:
-        # Get feature usage for this date
-        features = db.query(FeatureUsage).filter(
-            FeatureUsage.usage_date == current
-        ).all()
+        day_start = datetime.combine(current, datetime.min.time())
+        day_end = datetime.combine(current, datetime.max.time())
+        
+        # Count each activity type for this day
+        def count_activity_type(activity_type: str) -> int:
+            return db.query(func.count(SessionModel.id)).filter(
+                SessionModel.activity_type == activity_type,
+                SessionModel.started_at >= day_start,
+                SessionModel.started_at <= day_end
+            ).scalar() or 0
+        
+        # Count shared twin sessions
+        shared_interactions = db.query(func.count(SessionModel.id)).filter(
+            SessionModel.is_shared_twin == True,
+            SessionModel.started_at >= day_start,
+            SessionModel.started_at <= day_end
+        ).scalar() or 0
         
         data = {
             "date": f"{current.month}/{current.day}",
-            "questionAsked": sum(f.usage_count for f in features if f.feature_name == 'question_asked'),
-            "infoRetrieved": sum(f.usage_count for f in features if f.feature_name == 'info_retrieved'),
-            "documentsDrafted": sum(f.usage_count for f in features if f.feature_name == 'document_drafted'),
-            "sharedInteractions": sum(f.usage_count for f in features if f.feature_name == 'shared_interaction'),
+            "questionAsked": count_activity_type('conversation'),
+            "infoRetrieved": count_activity_type('query'),
+            "documentsDrafted": count_activity_type('document'),
+            "sharedInteractions": shared_interactions,
         }
         result.append(data)
         current += timedelta(days=1)
@@ -126,39 +164,45 @@ def get_feature_distribution(
     """
     Get feature usage distribution (for pie chart).
     
-    Returns aggregated feature usage counts across the date range.
+    Returns aggregated session counts by activity type across the date range.
     """
-    start = datetime.strptime(start_date, "%Y-%m-%d").date()
-    end = datetime.strptime(end_date, "%Y-%m-%d").date()
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
     
-    # Query and aggregate feature usage
-    features = db.query(FeatureUsage).filter(
-        FeatureUsage.usage_date >= start,
-        FeatureUsage.usage_date <= end
-    ).all()
+    # Count each activity type in the date range
+    activity_counts = db.query(
+        SessionModel.activity_type,
+        func.count(SessionModel.id).label('count')
+    ).filter(
+        SessionModel.started_at >= start,
+        SessionModel.started_at <= end
+    ).group_by(SessionModel.activity_type).all()
     
-    # Aggregate by feature name
-    feature_map = {}
-    for feature in features:
-        name = feature.feature_name
-        if name not in feature_map:
-            feature_map[name] = 0
-        feature_map[name] += feature.usage_count
-    
-    # Format for frontend
+    # Map activity types to user-friendly names
     feature_labels = {
-        'question_asked': 'Questions Asked',
-        'info_retrieved': 'Information Retrieved',
-        'document_drafted': 'Documents Drafted',
-        'shared_interaction': 'Shared Twin Usage',
-        'email_query': 'Email Queries',
+        'conversation': 'Questions Asked',
+        'query': 'Information Retrieved',
+        'document': 'Documents Drafted',
     }
     
     result = []
-    for key, count in feature_map.items():
+    for activity_type, count in activity_counts:
         result.append({
-            "name": feature_labels.get(key, key.replace('_', ' ').title()),
+            "name": feature_labels.get(activity_type, activity_type.replace('_', ' ').title()),
             "value": count
+        })
+    
+    # Add shared twin count separately
+    shared_count = db.query(func.count(SessionModel.id)).filter(
+        SessionModel.is_shared_twin == True,
+        SessionModel.started_at >= start,
+        SessionModel.started_at <= end
+    ).scalar() or 0
+    
+    if shared_count > 0:
+        result.append({
+            "name": "Shared Twin Usage",
+            "value": shared_count
         })
     
     return result

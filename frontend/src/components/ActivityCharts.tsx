@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getActivityData, getConversationData, getFeatureEngagementData } from '../utils/mockData';
+import { getActivityData, getConversationData, getFeatureEngagementData } from '../utils/api';
 
 interface ActivityChartsProps {
   dateRange: { start: string; end: string };

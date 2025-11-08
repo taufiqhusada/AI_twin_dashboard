@@ -8,7 +8,7 @@ from sqlalchemy import func, distinct
 from datetime import datetime, timedelta
 
 from app.api.deps import get_db
-from app.models import User, Twin, Activity, Session as SessionModel, Document
+from app.models import User, Twin, Session as SessionModel, Document
 from app.schemas import MetricsResponse
 
 router = APIRouter()
@@ -40,10 +40,10 @@ def get_metrics(
         SessionModel.started_at <= end
     ).scalar() or 0
     
-    total_conversations = db.query(func.count(Activity.id)).filter(
-        Activity.activity_type == 'conversation',
-        Activity.started_at >= start,
-        Activity.started_at <= end
+    total_conversations = db.query(func.count(SessionModel.id)).filter(
+        SessionModel.activity_type == 'conversation',
+        SessionModel.started_at >= start,
+        SessionModel.started_at <= end
     ).scalar() or 0
     
     documents_drafted = db.query(func.count(Document.id)).filter(
@@ -61,10 +61,10 @@ def get_metrics(
         SessionModel.started_at < prev_end
     ).scalar() or 0
     
-    prev_conversations = db.query(func.count(Activity.id)).filter(
-        Activity.activity_type == 'conversation',
-        Activity.started_at >= prev_start,
-        Activity.started_at < prev_end
+    prev_conversations = db.query(func.count(SessionModel.id)).filter(
+        SessionModel.activity_type == 'conversation',
+        SessionModel.started_at >= prev_start,
+        SessionModel.started_at < prev_end
     ).scalar() or 0
     
     prev_documents = db.query(func.count(Document.id)).filter(

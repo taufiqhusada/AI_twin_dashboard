@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Users, MessageSquare, FileText, UserPlus, TrendingUp, TrendingDown } from 'lucide-react';
-import { getMetricsData } from '../utils/mockData';
+import { TrendingUp, TrendingDown, Users, MessageSquare, FileText, Zap, UserPlus } from 'lucide-react';
+import { getMetricsData } from '../utils/api';
 
 interface MetricsOverviewProps {
   dateRange: { start: string; end: string };

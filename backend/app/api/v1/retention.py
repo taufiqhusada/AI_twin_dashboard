@@ -1,14 +1,15 @@
 """
 Retention API endpoints.
 Provides user retention metrics and analytics.
+All calculated on-demand from session data.
 """
 from fastapi import APIRouter, Depends, Query as QueryParam
 from sqlalchemy.orm import Session
 from sqlalchemy import func, distinct
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.api.deps import get_db
-from app.models import UserRetention, Session as SessionModel
+from app.models import Session as SessionModel, User
 from app.schemas import RetentionResponse
 
 router = APIRouter()
@@ -21,18 +22,24 @@ def get_retention_metrics(
     db: Session = Depends(get_db)
 ):
     """
-    Get user retention metrics.
+    Get user retention metrics calculated from actual user behavior.
     
     Returns day 1, 7, 30 retention rates, avg session duration,
     sessions per user, and power users percentage.
+    
+    Note: Since we removed ended_at, average session duration is now N/A.
     """
-    start = datetime.strptime(start_date, "%Y-%m-%d").date()
-    end = datetime.strptime(end_date, "%Y-%m-%d").date()
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
     
-    # Get ALL retention data (not filtered by cohort date, since we want overall retention metrics)
-    retention_data = db.query(UserRetention).all()
+    # Get all users who were active in the period
+    active_user_ids = db.query(distinct(SessionModel.user_id)).filter(
+        SessionModel.started_at >= start,
+        SessionModel.started_at <= end
+    ).all()
+    active_user_ids = [uid[0] for uid in active_user_ids]
     
-    if not retention_data:
+    if not active_user_ids:
         return {
             "day1": 0,
             "day7": 0,
@@ -42,52 +49,66 @@ def get_retention_metrics(
             "powerUsersPercent": 0
         }
     
-    # Calculate retention percentages across all users
-    total_users = len(retention_data)
-    day_1_retained = sum(1 for r in retention_data if r.day_1_active)
-    day_7_retained = sum(1 for r in retention_data if r.day_7_active)
-    day_30_retained = sum(1 for r in retention_data if r.day_30_active)
+    # Calculate retention based on first session date
+    retention_counts = {"day1": 0, "day7": 0, "day30": 0}
+    total_users = len(active_user_ids)
     
-    # Calculate average session duration
-    start_dt = datetime.combine(start, datetime.min.time())
-    end_dt = datetime.combine(end, datetime.max.time())
+    for user_id in active_user_ids:
+        # Get user's first session
+        first_session = db.query(SessionModel).filter(
+            SessionModel.user_id == user_id
+        ).order_by(SessionModel.started_at).first()
+        
+        if not first_session:
+            continue
+            
+        cohort_date = first_session.started_at.date()
+        
+        # Check if user was active on day 1, 7, 30
+        for days, key in [(1, "day1"), (7, "day7"), (30, "day30")]:
+            check_date = cohort_date + timedelta(days=days)
+            if check_date > datetime.now().date():
+                continue
+                
+            day_start = datetime.combine(check_date, datetime.min.time())
+            day_end = datetime.combine(check_date, datetime.max.time())
+            
+            was_active = db.query(SessionModel).filter(
+                SessionModel.user_id == user_id,
+                SessionModel.started_at >= day_start,
+                SessionModel.started_at <= day_end
+            ).first() is not None
+            
+            if was_active:
+                retention_counts[key] += 1
     
-    avg_duration = db.query(func.avg(SessionModel.duration_seconds)).filter(
-        SessionModel.started_at >= start_dt,
-        SessionModel.started_at <= end_dt,
-        SessionModel.duration_seconds.isnot(None)
-    ).scalar() or 0
-    
-    minutes = int(avg_duration // 60)
-    seconds = int(avg_duration % 60)
+    # Average session duration is now N/A since we don't track ended_at
+    avg_duration = 0
+    minutes = 0
+    seconds = 0
     
     # Calculate sessions per user
     total_sessions = db.query(func.count(SessionModel.id)).filter(
-        SessionModel.started_at >= start_dt,
-        SessionModel.started_at <= end_dt
+        SessionModel.started_at >= start,
+        SessionModel.started_at <= end
     ).scalar() or 0
     
-    active_users = db.query(func.count(distinct(SessionModel.user_id))).filter(
-        SessionModel.started_at >= start_dt,
-        SessionModel.started_at <= end_dt
-    ).scalar() or 1
-    
-    sessions_per_user = round(total_sessions / active_users, 1) if active_users > 0 else 0.0
+    sessions_per_user = round(total_sessions / total_users, 1) if total_users > 0 else 0.0
     
     # Calculate power users (10+ sessions)
     power_users = db.query(SessionModel.user_id).filter(
-        SessionModel.started_at >= start_dt,
-        SessionModel.started_at <= end_dt
+        SessionModel.started_at >= start,
+        SessionModel.started_at <= end
     ).group_by(SessionModel.user_id).having(
         func.count(SessionModel.id) >= 10
     ).count()
     
-    power_users_percent = int((power_users / active_users) * 100) if active_users > 0 else 0
+    power_users_percent = int((power_users / total_users) * 100) if total_users > 0 else 0
     
     return {
-        "day1": int((day_1_retained / total_users) * 100) if total_users > 0 else 0,
-        "day7": int((day_7_retained / total_users) * 100) if total_users > 0 else 0,
-        "day30": int((day_30_retained / total_users) * 100) if total_users > 0 else 0,
+        "day1": int((retention_counts["day1"] / total_users) * 100) if total_users > 0 else 0,
+        "day7": int((retention_counts["day7"] / total_users) * 100) if total_users > 0 else 0,
+        "day30": int((retention_counts["day30"] / total_users) * 100) if total_users > 0 else 0,
         "avgSessionDuration": f"{minutes}m {seconds}s",
         "sessionsPerUser": str(sessions_per_user),
         "powerUsersPercent": power_users_percent

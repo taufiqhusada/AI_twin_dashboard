@@ -52,6 +52,23 @@ class FeatureUsageItem(BaseModel):
     value: int
 
 
+# Hourly Activity Response
+class HourlyActivityPoint(BaseModel):
+    """Single data point for hourly activity chart."""
+    hour: int
+    value: int
+
+
+# Organization Leaderboard Response
+class OrganizationLeaderboardItem(BaseModel):
+    """Organization leaderboard item."""
+    id: str
+    name: str
+    activeUsers: int
+    totalActivities: int
+    avgActivitiesPerUser: int
+
+
 # Retention Response
 class RetentionResponse(BaseModel):
     """Response schema for user retention metrics."""

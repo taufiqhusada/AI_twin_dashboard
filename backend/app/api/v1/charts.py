@@ -16,6 +16,8 @@ from app.schemas import (
     ConversationChartPoint,
     EngagementChartPoint,
     FeatureUsageItem,
+    HourlyActivityPoint,
+    OrganizationLeaderboardItem,
 )
 
 router = APIRouter()
@@ -229,6 +231,109 @@ def get_feature_distribution(
         result.append({
             "name": "Information Retrieved",
             "value": queries_count
+        })
+    
+    return result
+
+
+@router.get("/hourly-activity", response_model=List[HourlyActivityPoint])
+def get_hourly_activity(
+    start_date: str = QueryParam(..., description="Start date in YYYY-MM-DD format"),
+    end_date: str = QueryParam(..., description="End date in YYYY-MM-DD format"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get average activity by hour of day based on conversations (messages).
+    
+    Returns array of {hour, value} for each hour (0-23) showing average conversation count.
+    Averages are calculated across all days in the date range.
+    """
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
+    
+    # Calculate number of days in range
+    days_in_range = (end.date() - start.date()).days + 1
+    
+    result = []
+    
+    for hour in range(24):
+        # Count messages (conversations) that were created during this hour across all days
+        total_count = 0
+        current_date = start.date()
+        
+        while current_date <= end.date():
+            day_start = datetime.combine(current_date, datetime.min.time()).replace(hour=hour)
+            day_end = day_start + timedelta(hours=1)
+            
+            # Count messages in this hour
+            count = db.query(func.count(Message.id)).filter(
+                Message.created_at >= day_start,
+                Message.created_at < day_end
+            ).scalar() or 0
+            
+            total_count += count
+            current_date += timedelta(days=1)
+        
+        # Calculate average for this hour
+        avg_count = round(total_count / days_in_range) if days_in_range > 0 else 0
+        
+        result.append({
+            "hour": hour,
+            "value": avg_count
+        })
+    
+    return result
+
+
+@router.get("/organizations/leaderboard", response_model=List[OrganizationLeaderboardItem])
+def get_organization_leaderboard(
+    start_date: str = QueryParam(..., description="Start date in YYYY-MM-DD format"),
+    end_date: str = QueryParam(..., description="End date in YYYY-MM-DD format"),
+    limit: int = QueryParam(5, description="Number of top organizations to return"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get top organizations by activity.
+    
+    Returns top N organizations ranked by total activities, including:
+    - Organization name (from user's company field)
+    - Active users count
+    - Total activities
+    - Average activities per user
+    """
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
+    
+    # Import User model
+    from app.models import User
+    
+    # Group by company and calculate stats
+    org_stats = db.query(
+        User.company.label('company_name'),
+        func.count(distinct(SessionModel.user_id)).label('active_users'),
+        func.count(SessionModel.id).label('total_activities')
+    ).join(
+        SessionModel, SessionModel.user_id == User.id
+    ).filter(
+        SessionModel.started_at >= start,
+        SessionModel.started_at <= end,
+        User.company.isnot(None),
+        User.company != ''
+    ).group_by(
+        User.company
+    ).order_by(
+        func.count(SessionModel.id).desc()
+    ).limit(limit).all()
+    
+    result = []
+    for idx, (company_name, active_users, total_activities) in enumerate(org_stats):
+        avg_per_user = round(total_activities / active_users) if active_users > 0 else 0
+        result.append({
+            "id": str(idx + 1),
+            "name": company_name,
+            "activeUsers": active_users,
+            "totalActivities": total_activities,
+            "avgActivitiesPerUser": avg_per_user
         })
     
     return result

@@ -29,7 +29,7 @@ export function MetricsOverview({ dateRange }: MetricsOverviewProps) {
 
   if (loading || !metrics) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader className="pb-2">
@@ -81,7 +81,7 @@ export function MetricsOverview({ dateRange }: MetricsOverviewProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
       {metricCards.map((metric) => {
         const Icon = metric.icon;
         const isPositive = metric.change >= 0;

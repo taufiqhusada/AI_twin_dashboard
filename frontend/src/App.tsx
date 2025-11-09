@@ -3,6 +3,10 @@ import { Navbar } from './components/Navbar';
 import { MetricsOverview } from './components/MetricsOverview';
 import { ActivityCharts } from './components/ActivityCharts';
 import { FeatureUsage } from './components/FeatureUsage';
+import { FeatureEngagement } from './components/FeatureEngagement';
+import { FeatureDistribution } from './components/FeatureDistribution';
+import { HourlyActivity } from './components/HourlyActivity';
+import { OrganizationLeaderboard } from './components/OrganizationLeaderboard';
 import { RecentActivity } from './components/RecentActivity';
 import { UserRetention } from './components/UserRetention';
 import { DateRangePicker } from './components/DateRangePicker';
@@ -85,21 +89,27 @@ export default function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Metrics Overview */}
-        <MetricsOverview dateRange={dateRange} />
+        {/* Metrics Overview (2x2) + Organization Leaderboard */}
+        <div className="flex gap-6">
+          <div style={{ flex: '0 0 50%', maxHeight: '440px' }}>
+            <MetricsOverview dateRange={dateRange} />
+          </div>
+          <div style={{ flex: '0 0 calc(50% - 24px)', maxHeight: '440px' }}>
+            <OrganizationLeaderboard dateRange={dateRange} />
+          </div>
+        </div>
 
         {/* Activity Charts */}
         <div className="mt-8">
           <ActivityCharts dateRange={dateRange} />
         </div>
 
-        {/* Feature Usage & Retention */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        {/* Feature Usage */}
+        <div className="mt-8">
           <FeatureUsage dateRange={dateRange} />
-          <UserRetention dateRange={dateRange} />
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity - Full Width */}
         <div className="mt-8">
           <RecentActivity 
             onViewAll={() => setCurrentPage('activities')} 

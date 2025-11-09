@@ -111,4 +111,27 @@ export async function getActivityDetail(activityId: string) {
   return response.data;
 }
 
+// Hourly activity data
+export async function getHourlyActivity(dateRange: { start: string; end: string }) {
+  const response = await api.get('/api/charts/hourly-activity', {
+    params: {
+      start_date: dateRange.start,
+      end_date: dateRange.end,
+    },
+  });
+  return response.data;
+}
+
+// Organization leaderboard
+export async function getOrganizationLeaderboard(dateRange: { start: string; end: string }, limit: number = 5) {
+  const response = await api.get('/api/charts/organizations/leaderboard', {
+    params: {
+      start_date: dateRange.start,
+      end_date: dateRange.end,
+      limit: limit,
+    },
+  });
+  return response.data;
+}
+
 export default api;

@@ -30,7 +30,8 @@ def get_activity_chart(
     """
     Get daily active users for charting.
     
-    Returns array of {date, activeUsers} for each day in the range.
+    Returns array of {date, activeUsers, average} for each day in the range.
+    The average is calculated across the entire date range.
     """
     start = datetime.strptime(start_date, "%Y-%m-%d").date()
     end = datetime.strptime(end_date, "%Y-%m-%d").date()
@@ -54,6 +55,12 @@ def get_activity_chart(
         })
         current += timedelta(days=1)
     
+    # Calculate average and add to all data points
+    if result:
+        avg_active_users = round(sum(point["activeUsers"] for point in result) / len(result))
+        for point in result:
+            point["average"] = avg_active_users
+    
     return result
 
 
@@ -66,7 +73,8 @@ def get_conversation_chart(
     """
     Get daily conversation and message counts for charting.
     
-    Returns array of {date, conversations, messages} for each day in the range.
+    Returns array of {date, conversations, messages, avgConversations, avgMessages} 
+    for each day in the range. Averages are calculated across the entire date range.
     """
     start = datetime.strptime(start_date, "%Y-%m-%d").date()
     end = datetime.strptime(end_date, "%Y-%m-%d").date()
@@ -98,6 +106,14 @@ def get_conversation_chart(
             "messages": messages
         })
         current += timedelta(days=1)
+    
+    # Calculate averages and add to all data points
+    if result:
+        avg_conversations = round(sum(point["conversations"] for point in result) / len(result))
+        avg_messages = round(sum(point["messages"] for point in result) / len(result))
+        for point in result:
+            point["avgConversations"] = avg_conversations
+            point["avgMessages"] = avg_messages
     
     return result
 

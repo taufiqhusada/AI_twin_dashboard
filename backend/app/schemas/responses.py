@@ -25,6 +25,7 @@ class ActivityChartPoint(BaseModel):
     """Single data point for activity chart."""
     date: str
     activeUsers: int
+    average: Optional[int] = None
 
 
 class ConversationChartPoint(BaseModel):
@@ -32,6 +33,8 @@ class ConversationChartPoint(BaseModel):
     date: str
     conversations: int
     messages: int
+    avgConversations: Optional[int] = None
+    avgMessages: Optional[int] = None
 
 
 class EngagementChartPoint(BaseModel):

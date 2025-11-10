@@ -32,7 +32,6 @@ const getDefaultDateRange = () => {
 export default function App() {
   const initialDateRange = getDefaultDateRange();
   const [dateRange, setDateRange] = useState(initialDateRange);
-  const [originalDateRange] = useState(initialDateRange);
   const [baseDateRange, setBaseDateRange] = useState(initialDateRange);
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'activities' | 'activity-detail'>('dashboard');
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
@@ -64,7 +63,7 @@ export default function App() {
   };
 
   const handleResetZoom = () => {
-    setDateRange(originalDateRange);
+    setDateRange(baseDateRange);
     setSelectedDate(null);
   };
 
@@ -79,7 +78,7 @@ export default function App() {
     setSelectedDate(null);
   };
 
-  const isZoomed = dateRange.start !== originalDateRange.start || dateRange.end !== originalDateRange.end;
+  const isZoomed = dateRange.start !== baseDateRange.start || dateRange.end !== baseDateRange.end;
 
   if (currentPage === 'activity-detail' && activityDetail) {
     return (
@@ -99,7 +98,11 @@ export default function App() {
   if (currentPage === 'activities') {
     return (
       <>
-        <Navbar currentPage="activities" onNavigate={setCurrentPage} />
+        <Navbar 
+          currentPage="activities" 
+          onNavigate={setCurrentPage}
+          rightContent={<DateRangePicker dateRange={dateRange} onDateRangeChange={handleDateRangeChange} />}
+        />
         <Activities onViewActivity={handleViewActivity} />
       </>
     );
@@ -107,44 +110,35 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <Navbar currentPage="dashboard" onNavigate={setCurrentPage} />
-      
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-gray-900">AI Twin Analytics Dashboard</h1>
-              <p className="text-gray-600 mt-1">Monitor user engagement and product metrics</p>
-            </div>
-            <DateRangePicker dateRange={dateRange} onDateRangeChange={handleDateRangeChange} />
-          </div>
-        </div>
-      </header>
+      {/* Navbar with DateRangePicker */}
+      <Navbar 
+        currentPage="dashboard" 
+        onNavigate={setCurrentPage}
+        rightContent={<DateRangePicker dateRange={dateRange} onDateRangeChange={handleDateRangeChange} />}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Zoom Indicator */}
         {(isZoomed || selectedDate) && (
-          <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="mb-6 bg-blue-50 border-2 border-blue-400 rounded-lg p-4 flex items-center justify-between shadow-md">
             <div className="flex items-center gap-3">
-              <ZoomIn className="h-5 w-5 text-indigo-600" />
+              <ZoomIn className="h-6 w-6 text-blue-600" />
               <div>
                 {isZoomed && (
                   <>
-                    <p className="text-sm text-indigo-900">
-                      Viewing filtered data: <span className="font-medium">{new Date(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - {new Date(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <p className="text-base text-blue-900 font-medium">
+                      Viewing filtered data: <span className="font-bold text-blue-700">{new Date(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - {new Date(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </p>
-                    <p className="text-xs text-indigo-700 mt-0.5">All charts are synchronized to this date range</p>
+                    <p className="text-sm text-blue-700 mt-1">All charts are synchronized to this date range</p>
                   </>
                 )}
                 {!isZoomed && selectedDate && (
                   <>
-                    <p className="text-sm text-indigo-900">
-                      Focused on: <span className="font-medium">{new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <p className="text-base text-blue-900 font-medium">
+                      Focused on: <span className="font-bold text-blue-700">{new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </p>
-                    <p className="text-xs text-indigo-700 mt-0.5">Click chart background or reset to view all data</p>
+                    <p className="text-sm text-blue-700 mt-1">Click chart background or reset to view all data</p>
                   </>
                 )}
               </div>
@@ -153,7 +147,7 @@ export default function App() {
               variant="outline" 
               size="sm"
               onClick={handleResetZoom}
-              className="border-indigo-300 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-900"
+              className="border-blue-500 text-blue-700 hover:bg-blue-100 hover:text-blue-900 font-medium"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
               {isZoomed ? 'Reset to Full Range' : 'Clear Focus'}

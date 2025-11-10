@@ -41,13 +41,11 @@ export function Activities({ onViewActivity }: ActivitiesProps) {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-6 py-6">
-            <h1 className="text-gray-900">All User Activities</h1>
-            <p className="text-gray-600 mt-1">Loading activities...</p>
-          </div>
-        </header>
         <main className="max-w-7xl mx-auto px-6 py-8">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-gray-900">All User Activities</h1>
+            <p className="text-sm text-gray-600 mt-1">View and search all user interactions with their Twins</p>
+          </div>
           <Card>
             <CardContent className="pt-6">
               <div className="h-[400px] flex items-center justify-center">
@@ -62,18 +60,14 @@ export function Activities({ onViewActivity }: ActivitiesProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div>
-            <h1 className="text-gray-900">All User Activities</h1>
-            <p className="text-gray-600 mt-1">View and search all user interactions with their Twins</p>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Page Title */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900">All User Activities</h1>
+          <p className="text-sm text-gray-600 mt-1">View and search all user interactions with their Twins</p>
+        </div>
+
         <Card>
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

@@ -83,7 +83,11 @@ export default function App() {
   if (currentPage === 'activity-detail' && activityDetail) {
     return (
       <>
-        <Navbar currentPage="activities" onNavigate={setCurrentPage} />
+        <Navbar 
+          currentPage="activities" 
+          onNavigate={setCurrentPage}
+          rightContent={<DateRangePicker dateRange={dateRange} onDateRangeChange={handleDateRangeChange} />}
+        />
         {loadingDetail ? (
           <div className="min-h-screen flex items-center justify-center">
             <div className="animate-pulse text-gray-400">Loading activity details...</div>
@@ -103,7 +107,7 @@ export default function App() {
           onNavigate={setCurrentPage}
           rightContent={<DateRangePicker dateRange={dateRange} onDateRangeChange={handleDateRangeChange} />}
         />
-        <Activities onViewActivity={handleViewActivity} />
+        <Activities onViewActivity={handleViewActivity} dateRange={dateRange} />
       </>
     );
   }

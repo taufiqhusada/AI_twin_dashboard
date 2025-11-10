@@ -5,7 +5,7 @@ Provides activity tracking, listing, filtering, and detailed views.
 from fastapi import APIRouter, Depends, Query as QueryParam, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 from app.api.deps import get_db
 from app.models import User, Session as SessionModel, Twin
@@ -15,14 +15,16 @@ from app.utils import format_time_ago, format_duration
 router = APIRouter()
 
 
-@router.get("/activities", response_model=List[ActivityListItem])
+@router.get("/activities")
 def get_activities(
     page: int = QueryParam(1, ge=1, description="Page number"),
-    limit: int = QueryParam(100, ge=1, le=1000, description="Items per page"),
+    limit: int = QueryParam(20, ge=1, le=100, description="Items per page"),
     type: Optional[str] = QueryParam(None, description="Filter by activity type"),
     user: Optional[str] = QueryParam(None, description="Filter by user email"),
+    start_date: Optional[str] = QueryParam(None, description="Filter start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = QueryParam(None, description="Filter end date (YYYY-MM-DD)"),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """Get all sessions (activities) with filtering and pagination"""
     query = db.query(SessionModel).join(User, SessionModel.user_id == User.id)
     
@@ -40,6 +42,27 @@ def get_activities(
     
     if user:
         query = query.filter(User.email.like(f"%{user}%"))
+    
+    # Date range filter
+    if start_date:
+        try:
+            start = datetime.strptime(start_date, "%Y-%m-%d")
+            query = query.filter(SessionModel.started_at >= start)
+        except ValueError:
+            pass  # Invalid date format, skip filter
+    
+    if end_date:
+        try:
+            from datetime import timedelta
+            end = datetime.strptime(end_date, "%Y-%m-%d")
+            # Include the entire end date by adding 1 day
+            end = end + timedelta(days=1)
+            query = query.filter(SessionModel.started_at < end)
+        except ValueError:
+            pass  # Invalid date format, skip filter
+    
+    # Get total count before pagination
+    total_count = query.count()
     
     query = query.order_by(SessionModel.started_at.desc())
     offset = (page - 1) * limit
@@ -85,7 +108,17 @@ def get_activities(
             "queryCount": len(session.queries)
         })
     
-    return result
+    total_pages = (total_count + limit - 1) // limit  # Ceiling division
+    
+    return {
+        "items": result,
+        "total": total_count,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_prev": page > 1
+    }
 
 
 @router.get("/activities/{activity_id}", response_model=ActivityDetail)

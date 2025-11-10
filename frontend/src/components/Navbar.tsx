@@ -48,7 +48,7 @@ export function Navbar({ currentPage, onNavigate, rightContent }: NavbarProps) {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-12">
+          <div className="hidden md:flex items-center gap-16">
             <div className="flex items-center gap-2">
               {navItems.map((item) => {
                 const Icon = item.icon;

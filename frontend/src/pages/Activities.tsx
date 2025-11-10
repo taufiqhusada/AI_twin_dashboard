@@ -4,24 +4,37 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { MessageSquare, FileText, Search as SearchIcon, Users } from 'lucide-react';
+import { MessageSquare, FileText, Search as SearchIcon, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getAllActivities } from '../utils/api';
 
 interface ActivitiesProps {
   onViewActivity: (activity: any) => void;
+  dateRange: { start: string; end: string };
 }
 
-export function Activities({ onViewActivity }: ActivitiesProps) {
+const ITEMS_PER_PAGE = 20;
+
+export function Activities({ onViewActivity, dateRange }: ActivitiesProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [allActivities, setAllActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     const fetchActivities = async () => {
       setLoading(true);
       try {
-        const data = await getAllActivities();
-        setAllActivities(data);
+        const response = await getAllActivities({
+          start_date: dateRange.start,
+          end_date: dateRange.end,
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+        });
+        setAllActivities(response.items || []);
+        setTotalPages(response.total_pages || 1);
+        setTotalCount(response.total || 0);
       } catch (error) {
         console.error('Failed to fetch activities:', error);
       } finally {
@@ -30,7 +43,12 @@ export function Activities({ onViewActivity }: ActivitiesProps) {
     };
 
     fetchActivities();
-  }, []);
+  }, [dateRange, currentPage]);
+
+  // Reset to page 1 when date range changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateRange]);
 
   // Filter activities based on search
   const filteredActivities = allActivities.filter((activity) => {
@@ -74,7 +92,7 @@ export function Activities({ onViewActivity }: ActivitiesProps) {
               <div>
                 <CardTitle>Activity Log</CardTitle>
                 <CardDescription>
-                  {filteredActivities.length} {filteredActivities.length === 1 ? 'activity' : 'activities'} found
+                  {totalCount} {totalCount === 1 ? 'activity' : 'activities'} found
                 </CardDescription>
               </div>
               
@@ -179,6 +197,99 @@ export function Activities({ onViewActivity }: ActivitiesProps) {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination Controls */}
+            {!loading && filteredActivities.length > 0 && (
+              <div className="flex items-center justify-between border-t border-gray-200 pt-4 mt-4">
+                <div className="text-sm text-gray-600">
+                  Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} of {totalCount} activities
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {currentPage > 2 && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(1)}
+                          className="w-9"
+                        >
+                          1
+                        </Button>
+                        {currentPage > 3 && <span className="text-gray-500 px-1">...</span>}
+                      </>
+                    )}
+                    
+                    {currentPage > 1 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        className="w-9"
+                      >
+                        {currentPage - 1}
+                      </Button>
+                    )}
+                    
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="w-9"
+                    >
+                      {currentPage}
+                    </Button>
+                    
+                    {currentPage < totalPages && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        className="w-9"
+                      >
+                        {currentPage + 1}
+                      </Button>
+                    )}
+                    
+                    {currentPage < totalPages - 1 && (
+                      <>
+                        {currentPage < totalPages - 2 && <span className="text-gray-500 px-1">...</span>}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(totalPages)}
+                          className="w-9"
+                        >
+                          {totalPages}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    disabled={currentPage >= totalPages}
+                    className="gap-1"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>

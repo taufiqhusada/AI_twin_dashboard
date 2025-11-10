@@ -93,16 +93,20 @@ export async function getAllActivities(filters?: {
   limit?: number;
   type?: string;
   user?: string;
+  start_date?: string;
+  end_date?: string;
 }) {
   const response = await api.get('/api/activities', {
     params: {
       page: filters?.page || 1,
-      limit: filters?.limit || 100,
+      limit: filters?.limit || 20,
       type: filters?.type,
       user: filters?.user,
+      start_date: filters?.start_date,
+      end_date: filters?.end_date,
     },
   });
-  return response.data;
+  return response.data; // Now returns { items, total, page, limit, total_pages, has_next, has_prev }
 }
 
 // Activity detail

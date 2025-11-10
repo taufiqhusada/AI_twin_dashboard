@@ -62,7 +62,7 @@ export function Activities({ onViewActivity, dateRange }: ActivitiesProps) {
         <main className="max-w-7xl mx-auto px-6 py-8">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900">All User Activities</h1>
-            <p className="text-sm text-gray-600 mt-1">View and search all user interactions with their Twins</p>
+            <p className="text-sm text-gray-600 mt-1">View and search all user interactions with AI Twins</p>
           </div>
           <Card>
             <CardContent className="pt-6">
@@ -83,7 +83,7 @@ export function Activities({ onViewActivity, dateRange }: ActivitiesProps) {
         {/* Page Title */}
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-gray-900">All User Activities</h1>
-          <p className="text-sm text-gray-600 mt-1">View and search all user interactions with their Twins</p>
+          <p className="text-sm text-gray-600 mt-1">View and search all user interactions with AI Twins</p>
         </div>
 
         <Card>

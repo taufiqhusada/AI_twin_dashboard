@@ -168,7 +168,7 @@ export function ActivityCharts({ dateRange, baseDateRange, onDateRangeChange, se
       <Card>
         <CardHeader>
           <CardTitle>Daily Active Users</CardTitle>
-          <CardDescription>User activity trends over the selected period • Drag on chart to zoom</CardDescription>
+          <CardDescription>User activity trends over the selected period</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -246,7 +246,7 @@ export function ActivityCharts({ dateRange, baseDateRange, onDateRangeChange, se
       <Card>
         <CardHeader>
           <CardTitle>Conversation Activity</CardTitle>
-          <CardDescription>Total conversations and messages per day • Drag on chart to zoom</CardDescription>
+          <CardDescription>Total conversations and messages per day</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
@@ -347,7 +347,7 @@ export function ActivityCharts({ dateRange, baseDateRange, onDateRangeChange, se
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>Feature Engagement Over Time</CardTitle>
-          <CardDescription>Distribution of feature usage across different Twin capabilities • Drag on chart to zoom</CardDescription>
+          <CardDescription>Distribution of feature usage across different Twin capabilities</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>

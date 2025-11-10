@@ -15,8 +15,8 @@ interface DateRangePickerProps {
 
 export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePickerProps) {
   const handleRangeChange = (value: string) => {
-    const endDate = new Date('2025-11-06');
-    let startDate = new Date(endDate);
+    const endDate = new Date(); // Use current date instead of hardcoded
+    const startDate = new Date(endDate);
 
     switch (value) {
       case '7d':

@@ -13,14 +13,32 @@ import { DateRangePicker } from './components/DateRangePicker';
 import { Activities } from './pages/Activities';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { getActivityDetail } from './utils/api';
-import { Calendar, Users, MessageSquare, FileText } from 'lucide-react';
+import { Calendar, Users, MessageSquare, FileText, ZoomIn, RotateCcw } from 'lucide-react';
+import { Button } from './components/ui/button';
+import { toast } from 'sonner';
+
+// Helper function to get default date range (last 30 days)
+const getDefaultDateRange = () => {
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - 30);
+  
+  return {
+    start: startDate.toISOString().split('T')[0],
+    end: endDate.toISOString().split('T')[0],
+  };
+};
 
 export default function App() {
-  const [dateRange, setDateRange] = useState({ start: '2025-10-07', end: '2025-11-06' });
+  const initialDateRange = getDefaultDateRange();
+  const [dateRange, setDateRange] = useState(initialDateRange);
+  const [originalDateRange] = useState(initialDateRange);
+  const [baseDateRange, setBaseDateRange] = useState(initialDateRange);
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'activities' | 'activity-detail'>('dashboard');
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
   const [activityDetail, setActivityDetail] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const handleViewActivity = async (activity: any) => {
     setSelectedActivity(activity);
@@ -44,6 +62,23 @@ export default function App() {
     setActivityDetail(null);
     setCurrentPage('activities');
   };
+
+  const handleResetZoom = () => {
+    setDateRange(originalDateRange);
+    setSelectedDate(null);
+  };
+
+  const handleDateSelect = (date: string | null) => {
+    setSelectedDate(date);
+  };
+
+  const handleDateRangeChange = (newRange: { start: string; end: string }) => {
+    setDateRange(newRange);
+    setBaseDateRange(newRange);
+    setSelectedDate(null);
+  };
+
+  const isZoomed = dateRange.start !== originalDateRange.start || dateRange.end !== originalDateRange.end;
 
   if (currentPage === 'activity-detail' && activityDetail) {
     return (
@@ -82,13 +117,49 @@ export default function App() {
               <h1 className="text-gray-900">AI Twin Analytics Dashboard</h1>
               <p className="text-gray-600 mt-1">Monitor user engagement and product metrics</p>
             </div>
-            <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
+            <DateRangePicker dateRange={dateRange} onDateRangeChange={handleDateRangeChange} />
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Zoom Indicator */}
+        {(isZoomed || selectedDate) && (
+          <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ZoomIn className="h-5 w-5 text-indigo-600" />
+              <div>
+                {isZoomed && (
+                  <>
+                    <p className="text-sm text-indigo-900">
+                      Viewing filtered data: <span className="font-medium">{new Date(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - {new Date(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </p>
+                    <p className="text-xs text-indigo-700 mt-0.5">All charts are synchronized to this date range</p>
+                  </>
+                )}
+                {!isZoomed && selectedDate && (
+                  <>
+                    <p className="text-sm text-indigo-900">
+                      Focused on: <span className="font-medium">{new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </p>
+                    <p className="text-xs text-indigo-700 mt-0.5">Click chart background or reset to view all data</p>
+                  </>
+                )}
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleResetZoom}
+              className="border-indigo-300 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-900"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              {isZoomed ? 'Reset to Full Range' : 'Clear Focus'}
+            </Button>
+          </div>
+        )}
+
         {/* Metrics Overview (2x2) + Organization Leaderboard */}
         <div className="flex gap-6">
           <div style={{ flex: '0 0 50%', maxHeight: '440px' }}>
@@ -101,12 +172,22 @@ export default function App() {
 
         {/* Activity Charts */}
         <div className="mt-8">
-          <ActivityCharts dateRange={dateRange} />
+          <ActivityCharts 
+            dateRange={dateRange}
+            baseDateRange={baseDateRange}
+            onDateRangeChange={setDateRange}
+            selectedDate={selectedDate}
+            onDateSelect={handleDateSelect}
+          />
         </div>
 
         {/* Feature Usage */}
         <div className="mt-8">
-          <FeatureUsage dateRange={dateRange} />
+          <FeatureUsage 
+            dateRange={dateRange}
+            selectedDate={selectedDate}
+            onDateSelect={handleDateSelect}
+          />
         </div>
 
         {/* Recent Activity - Full Width */}

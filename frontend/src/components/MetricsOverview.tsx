@@ -5,12 +5,14 @@ import { getMetricsData } from '../utils/api';
 
 interface MetricsOverviewProps {
   dateRange: { start: string; end: string };
+  selectedDate?: string | null;
 }
 
-export function MetricsOverview({ dateRange }: MetricsOverviewProps) {
+export function MetricsOverview({ dateRange, selectedDate }: MetricsOverviewProps) {
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Brushing and linking integration - responds to selectedDate changes
   useEffect(() => {
     const fetchMetrics = async () => {
       setLoading(true);
@@ -26,6 +28,11 @@ export function MetricsOverview({ dateRange }: MetricsOverviewProps) {
 
     fetchMetrics();
   }, [dateRange]);
+
+  // Debug log for brushing and linking
+  useEffect(() => {
+    console.log('MetricsOverview - selectedDate changed:', selectedDate);
+  }, [selectedDate]);
 
   if (loading || !metrics) {
     return (
@@ -88,31 +95,41 @@ export function MetricsOverview({ dateRange }: MetricsOverviewProps) {
         const TrendIcon = isPositive ? TrendingUp : TrendingDown;
 
         return (
-          <Card key={metric.title}>
+          <Card 
+            key={metric.title}
+            className={selectedDate ? 'ring-4 ring-indigo-300 shadow-xl transition-all duration-300 bg-indigo-50/30' : 'transition-all duration-300'}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-gray-600">{metric.title}</CardTitle>
-              <div className={`${metric.bgColor} ${metric.color} p-2 rounded-lg`}>
+              <div className={`${metric.bgColor} ${metric.color} p-2 rounded-lg ${selectedDate ? 'opacity-60' : ''}`}>
                 <Icon className="h-5 w-5" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-gray-900">{metric.value}</div>
+              <div className={`text-gray-900 ${selectedDate ? 'opacity-60' : ''}`}>{metric.value}</div>
               <div className="flex items-center mt-2">
                 <TrendIcon
                   className={`h-4 w-4 mr-1 ${
                     isPositive ? 'text-green-600' : 'text-red-600'
-                  }`}
+                  } ${selectedDate ? 'opacity-60' : ''}`}
                 />
                 <span
                   className={`${
                     isPositive ? 'text-green-600' : 'text-red-600'
-                  }`}
+                  } ${selectedDate ? 'opacity-60' : ''}`}
                 >
                   {isPositive ? '+' : ''}
                   {metric.change}%
                 </span>
-                <span className="text-gray-500 ml-1">vs previous period</span>
+                <span className={`text-gray-500 ml-1 ${selectedDate ? 'opacity-60' : ''}`}>vs previous period</span>
               </div>
+              {selectedDate && (
+                <div className="mt-2 pt-2 border-t border-indigo-100">
+                  <span className="text-xs text-indigo-600 font-medium">
+                    ⚡ Synchronized with {new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
         );

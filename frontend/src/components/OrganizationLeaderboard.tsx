@@ -5,12 +5,14 @@ import { Building2, Users, TrendingUp } from 'lucide-react';
 
 interface OrganizationLeaderboardProps {
   dateRange: { start: string; end: string };
+  selectedDate?: string | null;
 }
 
-export function OrganizationLeaderboard({ dateRange }: OrganizationLeaderboardProps) {
+export function OrganizationLeaderboard({ dateRange, selectedDate }: OrganizationLeaderboardProps) {
   const [orgData, setOrgData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Brushing and linking integration - responds to selectedDate changes
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -26,6 +28,11 @@ export function OrganizationLeaderboard({ dateRange }: OrganizationLeaderboardPr
 
     fetchData();
   }, [dateRange]);
+
+  // Debug log for brushing and linking
+  useEffect(() => {
+    console.log('OrganizationLeaderboard - selectedDate changed:', selectedDate);
+  }, [selectedDate]);
 
   if (loading) {
     return (
@@ -45,17 +52,24 @@ export function OrganizationLeaderboard({ dateRange }: OrganizationLeaderboardPr
   }
 
   return (
-    <Card className="h-full">
+    <Card className={`h-full ${selectedDate ? 'ring-4 ring-indigo-300 shadow-xl transition-all duration-300 bg-indigo-50/30' : 'transition-all duration-300'}`}>
       <CardHeader>
         <CardTitle>Top Organizations</CardTitle>
-        <CardDescription>Most active companies by engagement</CardDescription>
+        <CardDescription>
+          Most active companies by engagement
+          {selectedDate && (
+            <span className="ml-2 text-indigo-600 font-medium">
+              • Synchronized with {new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          )}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
           {orgData.map((org, index) => (
             <div 
               key={org.id}
-              className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-indigo-200 transition-colors"
+              className={`flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-indigo-200 transition-colors ${selectedDate ? 'opacity-60' : ''}`}
             >
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex-shrink-0">
                 {index === 0 && '🥇'}

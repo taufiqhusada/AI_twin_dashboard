@@ -69,6 +69,7 @@ export default function App() {
   };
 
   const handleDateSelect = (date: string | null) => {
+    console.log('App.tsx - Date selected:', date);
     setSelectedDate(date);
   };
 
@@ -163,10 +164,10 @@ export default function App() {
         {/* Metrics Overview (2x2) + Organization Leaderboard */}
         <div className="flex gap-6">
           <div style={{ flex: '0 0 50%', maxHeight: '440px' }}>
-            <MetricsOverview dateRange={dateRange} />
+            <MetricsOverview dateRange={dateRange} selectedDate={selectedDate} />
           </div>
           <div style={{ flex: '0 0 calc(50% - 24px)', maxHeight: '440px' }}>
-            <OrganizationLeaderboard dateRange={dateRange} />
+            <OrganizationLeaderboard dateRange={dateRange} selectedDate={selectedDate} />
           </div>
         </div>
 
@@ -185,6 +186,7 @@ export default function App() {
         <div className="mt-8">
           <FeatureUsage 
             dateRange={dateRange}
+            baseDateRange={baseDateRange}
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
           />

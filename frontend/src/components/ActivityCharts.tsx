@@ -192,7 +192,14 @@ export function ActivityCharts({ dateRange, baseDateRange, onDateRangeChange, se
               }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" stroke="#888" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#888"
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  return `${date.getMonth() + 1}/${date.getDate()}`;
+                }}
+              />
               <YAxis stroke="#888" />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px' }}
@@ -263,7 +270,14 @@ export function ActivityCharts({ dateRange, baseDateRange, onDateRangeChange, se
               }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" stroke="#888" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#888"
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  return `${date.getMonth() + 1}/${date.getDate()}`;
+                }}
+              />
               <YAxis stroke="#888" />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px' }}
@@ -357,7 +371,14 @@ export function ActivityCharts({ dateRange, baseDateRange, onDateRangeChange, se
               }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" stroke="#888" />
+              <XAxis 
+                dataKey="date" 
+                stroke="#888"
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  return `${date.getMonth() + 1}/${date.getDate()}`;
+                }}
+              />
               <YAxis stroke="#888" />
               <Tooltip 
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e0e0e0', borderRadius: '8px' }}

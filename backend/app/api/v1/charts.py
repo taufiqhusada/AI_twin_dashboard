@@ -52,7 +52,7 @@ def get_activity_chart(
         ).scalar() or 0
         
         result.append({
-            "date": f"{current.month}/{current.day}",
+            "date": current.strftime("%Y-%m-%d"),
             "activeUsers": active_users
         })
         current += timedelta(days=1)
@@ -103,7 +103,7 @@ def get_conversation_chart(
         ).scalar() or 0
         
         result.append({
-            "date": f"{current.month}/{current.day}",
+            "date": current.strftime("%Y-%m-%d"),
             "conversations": conversations,
             "messages": messages
         })
@@ -167,7 +167,7 @@ def get_engagement_chart(
         ).scalar() or 0
         
         data = {
-            "date": f"{current.month}/{current.day}",
+            "date": current.strftime("%Y-%m-%d"),
             "questionAsked": questions_asked,
             "infoRetrieved": info_retrieved,
             "documentsDrafted": documents_drafted,

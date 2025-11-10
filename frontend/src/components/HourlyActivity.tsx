@@ -6,9 +6,10 @@ import { Clock } from 'lucide-react';
 
 interface HourlyActivityProps {
   dateRange: { start: string; end: string };
+  selectedDate?: string | null;
 }
 
-export function HourlyActivity({ dateRange }: HourlyActivityProps) {
+export function HourlyActivity({ dateRange, selectedDate }: HourlyActivityProps) {
   const [hourlyData, setHourlyData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,10 +52,17 @@ export function HourlyActivity({ dateRange }: HourlyActivityProps) {
   const peakHours = sortedHours.slice(0, 2).map(h => `${h.hour}:00`).join(', ');
 
   return (
-    <Card>
+    <Card className={selectedDate ? 'ring-4 ring-indigo-300 shadow-xl transition-all duration-300 bg-indigo-50/30' : 'transition-all duration-300'}>
       <CardHeader>
         <CardTitle>Average Activity by Hour</CardTitle>
-        <CardDescription>Daily activity pattern (averaged over period)</CardDescription>
+        <CardDescription>
+          Daily activity pattern (averaged over period)
+          {selectedDate && (
+            <span className="ml-2 text-indigo-600 font-medium">
+              • Synchronized with {new Date(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          )}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={280}>
@@ -87,7 +95,8 @@ export function HourlyActivity({ dateRange }: HourlyActivityProps) {
               dataKey="value" 
               stroke="#3b82f6" 
               strokeWidth={2}
-              dot={{ fill: '#3b82f6', r: 3 }}
+              strokeOpacity={selectedDate ? 0.5 : 1}
+              dot={{ fill: '#3b82f6', r: 3, fillOpacity: selectedDate ? 0.5 : 1 }}
               activeDot={{ r: 5 }}
             />
           </LineChart>

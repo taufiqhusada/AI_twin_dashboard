@@ -84,7 +84,7 @@ export async function getRecentActivityData() {
       limit: 8,
     },
   });
-  return response.data;
+  return response.data.items || response.data; // Handle new pagination format
 }
 
 // All activities with filtering

@@ -101,7 +101,7 @@ npm install
 npm run dev
 ```
 
-Frontend will be available at `http://localhost:5173`
+Frontend will be available at `http://localhost:3000`
 
 ## 🏗️ Architecture
 

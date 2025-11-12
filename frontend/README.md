@@ -23,7 +23,7 @@ npm run dev
 npm run build
 ```
 
-The application will be available at `http://localhost:5173`
+The application will be available at `http://localhost:3000`
 
 ## Project Structure
 

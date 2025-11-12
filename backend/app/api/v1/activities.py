@@ -169,7 +169,7 @@ def get_activity_detail(activity_id: str, db: Session = Depends(get_db)):
                     msg_data["documentCreated"] = {
                         "title": doc_for_msg.title or "Untitled Document",
                         "type": doc_for_msg.document_type,
-                        "wordCount": len(doc_for_msg.content.split()) if doc_for_msg.content else 0
+                        "wordCount": doc_for_msg.word_count or 0
                     }
             
             if msg.message_type and 'query' in msg.message_type:

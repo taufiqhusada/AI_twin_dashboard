@@ -280,14 +280,11 @@ def create_document_from_message(db, session, message, topic):
         f"{topic.title()} Analysis"
     ]
     
-    content = f"This is a document about {topic} with approximately {word_count} words. " * 10
-    
     document = Document(
         session_id=session.id,
         message_id=message.id,
         document_type=random.choice(doc_types),
         title=random.choice(titles),
-        content=content,
         word_count=word_count,
         created_at=message.created_at
     )

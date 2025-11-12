@@ -103,8 +103,7 @@ class Document(Base):
     message_id = Column(String, ForeignKey("messages.id", ondelete="SET NULL"), nullable=True, index=True)  # Message that triggered document creation
     document_type = Column(String(100))  # 'email', 'report', 'proposal', 'summary'
     title = Column(String(500))
-    content = Column(Text, nullable=False)
-    word_count = Column(Integer)
+    word_count = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships

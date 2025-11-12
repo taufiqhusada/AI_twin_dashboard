@@ -151,8 +151,7 @@ CREATE TABLE documents (
     message_id TEXT,                        -- Message that triggered document creation (indexed)
     document_type TEXT,                     -- 'email', 'report', 'proposal', 'summary'
     title TEXT,                             -- Document title
-    content TEXT NOT NULL,                  -- Document content
-    word_count INTEGER,                     -- Calculated word count
+    word_count INTEGER NOT NULL,            -- Word count of the document
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
@@ -166,7 +165,7 @@ CREATE INDEX idx_documents_message_id ON documents(message_id);
 **Purpose:**
 - Track documents created during conversations
 - Link back to the message that requested the document
-- Store full document content and metadata
+- Store document metadata including word count
 - Used for "Documents Drafted" metrics
 
 

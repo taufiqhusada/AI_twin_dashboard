@@ -4,7 +4,7 @@ A full-stack analytics dashboard for tracking AI Twin usage, engagement metrics,
 
 ## Demo
 
-[![AI Twin Dashboard Demo](https://img.youtube.com/vi/LfyP8ZSs0NU/maxresdefault.jpg)](https://youtu.be/LfyP8ZSs0NU)
+[![AI Twin Dashboard Demo](https://img.youtube.com/vi/LfyP8ZSs0NU/maxresdefault.jpg)](https://youtu.be/LfyP8ZSs0NU) 
 
 *Click the image above to watch the demo video* 
 

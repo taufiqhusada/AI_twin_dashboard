@@ -1,6 +1,12 @@
 # AI Twin Analytics Dashboard
 
-A full-stack analytics dashboard for tracking AI Twin usage, engagement metrics, and user activities 
+A full-stack analytics dashboard for tracking AI Twin usage, engagement metrics, and user activities
+
+## Demo
+
+[![AI Twin Dashboard Demo](https://img.youtube.com/vi/LfyP8ZSs0NU/maxresdefault.jpg)](https://youtu.be/LfyP8ZSs0NU)
+
+*Click the image above to watch the demo video* 
 
 ## Project Structure
 
@@ -103,37 +109,37 @@ npm run dev
 
 Frontend will be available at `http://localhost:3000`
 
-## 🏗️ Architecture
+## Architecture
 
 ### Backend (Python/FastAPI)
 
 **Conversation-Centric Data Model:**
-- 🎯 **Sessions**: Slack conversation threads with AI Twins
-- 💬 **Messages**: User and AI Twin messages within sessions
-- 📄 **Documents**: Metadatas related to documents generated during conversations (linked to messages)
-- 🔍 **Queries**: Metadatas related to information retrieved during conversations (linked to messages)
-- 👥 **Users & Twins**: User accounts and their AI Twin instances
+- **Sessions**: Slack conversation threads with AI Twins
+- **Messages**: User and AI Twin messages within sessions
+- **Documents**: Metadatas related to documents generated during conversations (linked to messages)
+- **Queries**: Metadatas related to information retrieved during conversations (linked to messages)
+- **Users & Twins**: User accounts and their AI Twin instances
 
 **API Architecture:**
-- ✅ **Core Layer**: Configuration (`config.py`) and database management (`database.py`)
-- ✅ **Models Layer**: SQLAlchemy ORM models - 6 main tables (User, Twin, Session, Message, Document, Query)
-- ✅ **API Layer**: RESTful endpoints with versioning (`/api/` prefix for v1)
-- ✅ **Schemas Layer**: Pydantic models for request/response validation
-- ✅ **Utils Layer**: Helper functions for time formatting and data processing
+- **Core Layer**: Configuration (`config.py`) and database management (`database.py`)
+- **Models Layer**: SQLAlchemy ORM models - 6 main tables (User, Twin, Session, Message, Document, Query)
+- **API Layer**: RESTful endpoints with versioning (`/api/` prefix for v1)
+- **Schemas Layer**: Pydantic models for request/response validation
+- **Utils Layer**: Helper functions for time formatting and data processing
 
 
 ### Frontend (React/TypeScript)
 
 **Component-Based Architecture:**
-- ✅ **Pages**: Dashboard (main), Activities (list view), Activity Detail (drill-down)
-- ✅ **Components**: 
+- **Pages**: Dashboard (main), Activities (list view), Activity Detail (drill-down)
+- **Components**: 
   - MetricsOverview: 4 key metrics with change indicators
   - ActivityCharts: Daily active users & conversation trends
   - FeatureUsage: Feature engagement over time
   - OrganizationLeaderboard: Top companies by activity
-  - RecentActivity: Latest 8 activities
-- ✅ **UI Library**: shadcn/ui components built on Radix UI
-- ✅ **Charts**: Recharts for all data visualizations
+  - RecentActivity: Latest activities
+- **UI Library**: shadcn/ui components built on Radix UI
+- **Charts**: Recharts for all data visualizations
 
 **Key Frontend Features:**
 - Real-time metrics with period-over-period comparison
@@ -143,7 +149,7 @@ Frontend will be available at `http://localhost:3000`
 - Paginated activity list with detailed drill-down
 - Responsive design 
 
-## 📊 Features
+## Features
 
 ### Dashboard View
 - **Metrics Overview**: 4-card layout showing:
@@ -201,7 +207,7 @@ Frontend will be available at `http://localhost:3000`
 - **Query**: Sessions where information retrieval occurred
 - **Shared Twin**: Sessions where user accessed someone else's Twin
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Backend
 - **Framework**: FastAPI 0.104+
@@ -222,7 +228,7 @@ Frontend will be available at `http://localhost:3000`
 - **Styling**: Tailwind CSS
 - **Icons**: Lucide React
 
-## 📈 API Endpoints
+## API Endpoints
 
 ### Health & Info
 - `GET /` - Health check
@@ -239,9 +245,6 @@ Frontend will be available at `http://localhost:3000`
 - `GET /hourly-activity?start_date=&end_date=` - Average activity by hour of day
 - `GET /organizations/leaderboard?start_date=&end_date=&limit=` - Top organizations by activity
 
-### Retention (`/api/`)
-- `GET /retention?start_date=&end_date=` - Day 1/7/30 retention, sessions per user, power users %
-
 ### Activities (`/api/activities`)
 - `GET /` - List activities with filters
   - Query params: `page`, `limit`, `type`, `user`, `start_date`, `end_date`
@@ -253,7 +256,7 @@ Frontend will be available at `http://localhost:3000`
 - ReDoc: `http://localhost:8000/redoc`
 
 
-## 📚 Documentation
+## Documentation
 
 - [Backend README](./backend/README.md) - Detailed backend architecture and development guide
 - [Frontend README](./frontend/README.md) - Frontend development guide (if exists)

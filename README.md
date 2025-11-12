@@ -1,6 +1,6 @@
-# 🎯 AI Twin Analytics Dashboard
+# AI Twin Analytics Dashboard
 
-A full-stack analytics dashboard for tracking AI Twin usage, engagement metrics, and user activities through Slack conversations.
+A full-stack analytics dashboard for tracking AI Twin usage, engagement metrics, and user activities 
 
 ## Project Structure
 
@@ -49,7 +49,7 @@ twin1/
     └── README.md              # Frontend documentation
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - **Python 3.11+** (backend)
@@ -207,7 +207,7 @@ Frontend will be available at `http://localhost:5173`
 - **Framework**: FastAPI 0.104+
 - **ORM**: SQLAlchemy 2.0+
 - **Validation**: Pydantic 2.4+
-- **Database**: SQLite (dev) → PostgreSQL (prod ready)
+- **Database**: SQLite (dev)
 - **Package Manager**: uv (Python)
 - **Python**: 3.11+
 - **Server**: Uvicorn (ASGI)

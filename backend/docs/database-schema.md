@@ -16,7 +16,6 @@ For detailed schema, indexes, relationships, and sample queries, please refer to
 ## Database: `ai_twin_analytics.db` (SQLite)
 
 **Current:** SQLite for development  
-**Production:** PostgreSQL (same schema, different dialect)
 
 ---
 

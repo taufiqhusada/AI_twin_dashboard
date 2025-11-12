@@ -73,7 +73,7 @@ cd backend
 uv sync
 ```
 
-3. Generate sample data (creates SQLite database with 60 days of data):
+3. Generate sample data, creates SQLite database with 60 days of data **(please don't skip this step, otherwise it won't show anything)**:
 ```bash
 uv run python scripts/generate_data.py
 ```
